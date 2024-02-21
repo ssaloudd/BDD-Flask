@@ -1,0 +1,198 @@
+<!-- HERENCIA DE PLANTILLA -->
+{% extends './layout.html' %}
+
+<!-- TITULO -->
+{% block title %}{{ data.titulo }}{% endblock %}
+
+<!-- CUERPO -->
+{% block body %}
+<h1 class="text-center mt-5 mb-5 text-primary">{{ data.materia }}</h1>
+
+<table>
+    <div class="row">
+        <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+            <div id="content">
+                <ul class="menu">
+                    <li><a href="{{ url_for('index') }}">Inicio</a></li>
+                    <li><a href="{{ url_for('alumnos') }}">Alumnos</a></li>
+                    <li><a href="{{ url_for('profesores') }}">Profesores</a></li>
+                    <li><a href="{{ url_for('materias') }}">Materias</a></li>
+                    <li><a href="{{ url_for('notas') }}">Notas</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <form action="/agregar-profesor" method="POST">
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label>Código: </label>
+                            <input type="text" class="form-control mb-3" name="codigo_pro">
+                        </div>
+                        <div class="col">
+                            <label>Cédula: </label>
+                            <input type="text" class="form-control mb-3" name="cedula_pro">
+                        </div>
+                        <div class="col">
+                            <label>Apellido: </label>
+                            <input type="text" class="form-control mb-3" name="apellido_pro">
+                        </div>
+                        <div class="col">
+                            <label>Nombre: </label>
+                            <input type="text" class="form-control mb-3" name="nombre_pro">
+                        </div>
+                        <div class="col">
+                            <label>Título: </label>
+                            <input type="text" class="form-control mb-3" name="titulo_pro">
+                        </div>
+                        <div class="col">
+                            <label>Dirección: </label>
+                            <input type="text" class="form-control mb-3" name="direccion_pro">
+                        </div>
+                        <div class="col">
+                            <label>Teléfono: </label>
+                            <input type="text" class="form-control mb-3" name="telefono_pro">
+                        </div>
+                        <div class="col">
+                            <label>E-mail: </label>
+                            <input type="text" class="form-control mb-3" name="email_pro">
+                        </div>
+                        <div class="col">
+                            <label>Género: </label>
+                            <input type="text" class="form-control mb-3" name="genero_pro">
+                        </div>
+                        <div class="col">
+                            <label>Fecha de nacimiento: </label>
+                            <input type="date" class="form-control mb-3" name="fecha_nac_pro">
+                        </div>
+                        <div class="col">
+                            <label>Observaciones: </label>
+                            <input type="text" class="form-control mb-3" name="observaciones_pro">
+                        </div>
+                        <div class="col">
+                            <button class="btn btn-primary mb-3 mt-3" type="submit">Agregar</button>
+                        </div>
+                    </div>
+                </form>
+
+                <form action="{{ url_for('buscar_profesores') }}" method="POST">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" placeholder="Buscar por código" name="busqueda" value="{{ busqueda }}">
+                        <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+                    </div>
+                </form>
+
+                <form action="{{ url_for('desplegar_x_profesores') }}" method="POST">
+                    <div class="input-group mb-3">
+                        <input type="number" class="form-control" placeholder="Desplegar cantidad de profesores" name="cantidad" min="1" required>
+                        <button class="btn btn-outline-secondary" type="submit">Desplegar</button>
+                    </div>
+                </form>
+                
+                <form action="{{ url_for('mostrar_todos_profesores') }}" method="POST">
+                    <div class="input-group mb-3">
+                        <button class="btn btn-outline-secondary" type="submit">Mostrar todos</button>
+                    </div>
+                </form>
+
+                <div id="tiempo-respuesta">
+                    {% if tiempo_respuesta %}
+                        Tiempo de respuesta: {{ tiempo_respuesta }} segundos. Exactamente: {{ tiempo_sec }} segundos y {{ tiempo_ms }} milisegundos.
+                    {% endif %}
+                </div>
+
+                <!-- TABLA -->
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th scope="col">Código</th>
+                            <th scope="col">Cédula</th>
+                            <th scope="col">Apellido</th>
+                            <th scope="col">Nombre</th>
+                            <th scope="col">Título</th>
+                            <th scope="col">Dirección</th>
+                            <th scope="col">Teléfono</th>
+                            <th scope="col">E-mail</th>
+                            <th scope="col">Género</th>
+                            <th scope="col">Fecha de nacimiento</th>
+                            <th scope="col">Observaciones</th>
+                            <th scope="col">Editar</th>
+                            <th scope="col">Eliminar</th>
+                        </tr>
+                    </thead>
+                
+                    <tbody>
+                        {% if lista %}
+                            {% for d in lista %}
+                                <tr>
+                                    <td>{{d.codigo_pro}}</td>
+                                    <td>{{d.cedula_pro}}</td>
+                                    <td>{{d.apellido_pro}}</td>
+                                    <td>{{d.nombre_pro}}</td>
+                                    <td>{{d.titulo_pro}}</td>
+                                    <td>{{d.direccion_pro}}</td>
+                                    <td>{{d.telefono_pro}}</td>
+                                    <td>{{d.email_pro}}</td>
+                                    <td>{{d.genero_pro}}</td>
+                                    <td>{{d.fecha_nac_pro}}</td>
+                                    <td>{{d.observaciones_pro}}</td>
+                                    <td> <button class="btn btn-primary btn-sm" id="btn-edit{{d.codigo_pro}}" data-bs-toggle="modal" data-bs-target="#modal{{d.codigo_pro}}">Editar</button></td>
+                                    <td><a href="{{url_for('eliminar_profesor', codigo_pro=d.codigo_pro)}}" class="btn btn-danger btn-sm">Eliminar</a></td>
+                                </tr>
+
+                                <!-- MODAL -->
+                                <div class="modal fade" id="modal{{d.codigo_pro}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                        <h1 class="modal-title fs-5" id="exampleModalLabel">{{d.codigo_pro}}</h1>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form action="{{ url_for('editar_profesor', codigo_pro=d.codigo_pro) }}" method="post">
+                                                <label>Cédula: </label>
+                                                <input type="text" class="form-control mb-3" name="cedula_pro" value="{{d.cedula_pro}}">
+                                                <label>Apellido: </label>
+                                                <input type="text" class="form-control mb-3" name="apellido_pro" value="{{d.apellido_pro}}">
+                                                <label>Nombre: </label>
+                                                <input type="text" class="form-control mb-3" name="nombre_pro" value="{{d.nombre_pro}}">
+                                                <label>Título: </label>
+                                                <input type="text" class="form-control mb-3" name="titulo_pro" value="{{d.titulo_pro}}">
+                                                <label>Dirección: </label>
+                                                <input type="text" class="form-control mb-3" name="direccion_pro" value="{{d.direccion_pro}}">
+                                                <label>Teléfono: </label>
+                                                <input type="text" class="form-control mb-3" name="telefono_pro" value="{{d.telefono_pro}}">
+                                                <label>E-mail: </label>
+                                                <input type="text" class="form-control mb-3" name="email_pro" value="{{d.email_pro}}">
+                                                <label>Género: </label>
+                                                <input type="text" class="form-control mb-3" name="genero_pro" value="{{d.genero_pro}}">
+                                                <label>Fecha de nacimiento: </label>
+                                                <input type="date" class="form-control mb-3" name="fecha_nac_pro" value="{{d.fecha_nac_pro}}">
+                                                <label>Observaciones: </label>
+                                                <input type="text" class="form-control mb-3" name="observaciones_pro" value="{{d.observaciones_pro}}">
+                                            
+                                                <div class="modal-footer">
+                                                    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="12">No se encontraron resultados para "{{ busqueda }}".</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    </div>
+</table>
+{% endblock %}

@@ -1,0 +1,24 @@
+<!-- HERENCIA DE PLANTILLA -->
+{% extends './layout.html' %}
+
+<!-- TITULO -->
+{% block title %}{{ data.titulo }}{% endblock %}
+
+<!-- CUERPO -->
+{% block body %}
+<h1 class="text-center mt-5 mb-5 text-primary">{{ data.materia }}</h1>
+<table>
+    <div class="row">
+        <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+            <div id="content">
+                <ul class="menu">
+                    <li><a href="{{ url_for('alumnos') }}">Alumnos</a></li>
+                    <li><a href="{{ url_for('profesores') }}">Profesores</a></li>
+                    <li><a href="{{ url_for('materias') }}">Materias</a></li>
+                    <li><a href="{{ url_for('notas') }}">Notas</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</table>
+{% endblock %}

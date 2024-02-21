@@ -1,0 +1,196 @@
+<!-- HERENCIA DE PLANTILLA -->
+{% extends './layout.html' %}
+
+<!-- TITULO -->
+{% block title %}Notas{% endblock %}
+
+<!-- CUERPO -->
+{% block body %}
+<h1 class="text-center mt-5 mb-5">Notas</h1>
+
+<table>
+    <div class="row">
+        <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+            <div id="content">
+                <ul class="menu">
+                    <li><a href="{{ url_for('index') }}">Inicio</a></li>
+                    <li><a href="{{ url_for('alumnos') }}">Alumnos</a></li>
+                    <li><a href="{{ url_for('profesores') }}">Profesores</a></li>
+                    <li><a href="{{ url_for('materias') }}">Materias</a></li>
+                    <li><a href="{{ url_for('notas') }}">Notas</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="card">
+            <div class="card-body">
+                <!-- Formulario para agregar nota -->
+                <form action="/agregar-nota" method="POST">
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label>Código: </label>
+                            <input type="text" class="form-control mb-3" name="codigo_not">
+                        </div>
+                        <div class="col">
+                            <label>Nota 1: </label>
+                            <input type="number" step="0.01" class="form-control mb-3" name="nota1_not">
+                        </div>
+                        <div class="col">
+                            <label>Nota 2: </label>
+                            <input type="number" step="0.01" class="form-control mb-3" name="nota2_not">
+                        </div>
+                        <div class="col">
+                            <label>Nota 3: </label>
+                            <input type="number" step="0.01" class="form-control mb-3" name="nota3_not">
+                        </div>
+                        <div class="col">
+                            <label>Fecha: </label>
+                            <input type="date" class="form-control mb-3" name="fecha_not">
+                        </div>
+                        <div class="col">
+                            <label>Observaciones: </label>
+                            <input type="text" class="form-control mb-3" name="observaciones_not">
+                        </div>
+                        <div class="col">
+                            <label>Código Alumno: </label>
+                            <input type="text" class="form-control mb-3" name="codigo_alu">
+                        </div>
+                        <div class="col">
+                            <label>Código Profesor: </label>
+                            <input type="text" class="form-control mb-3" name="codigo_pro">
+                        </div>
+                        <div class="col">
+                            <label>Código Materia: </label>
+                            <input type="text" class="form-control mb-3" name="codigo_mat">
+                        </div>
+                        <div class="col">
+                            <button class="btn btn-primary mb-3 mt-3" type="submit">Agregar</button>
+                        </div>
+                    </div>
+                </form>
+
+                <form action="{{ url_for('buscar_notas') }}" method="POST">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" placeholder="Buscar por código" name="busqueda" value="{{ busqueda }}">
+                        <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+                    </div>
+                </form>
+
+                <form action="{{ url_for('desplegar_x_notas') }}" method="POST">
+                    <div class="input-group mb-3">
+                        <input type="number" class="form-control" placeholder="Desplegar cantidad de notas" name="cantidad" min="1" required>
+                        <button class="btn btn-outline-secondary" type="submit">Desplegar</button>
+                    </div>
+                </form>
+                
+                <form action="{{ url_for('mostrar_todas_notas') }}" method="POST">
+                    <div class="input-group mb-3">
+                        <button class="btn btn-outline-secondary" type="submit">Mostrar todos</button>
+                    </div>
+                </form>
+
+                <div id="tiempo-respuesta">
+                    {% if tiempo_respuesta %}
+                        Tiempo de respuesta: {{ tiempo_respuesta }} segundos. Exactamente: {{ tiempo_sec }} segundos y {{ tiempo_ms }} milisegundos.
+                    {% endif %}
+                </div>
+
+                <!-- TABLA -->
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th scope="col">Código</th>
+                            <th scope="col">Nota 1</th>
+                            <th scope="col">Nota 2</th>
+                            <th scope="col">Nota 3</th>
+                            <th scope="col">Fecha</th>
+                            <th scope="col">Observaciones</th>
+                            <th scope="col">Código Alumno</th>
+                            <th scope="col">Código Profesor</th>
+                            <th scope="col">Código Materia</th>
+                            <th scope="col">Editar</th>
+                            <th scope="col">Eliminar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if lista %}
+                            {% for d in lista %}
+                                <tr>
+                                    <td>{{ d.codigo_not }}</td>
+                                    <td>{{ d.nota1_not }}</td>
+                                    <td>{{ d.nota2_not }}</td>
+                                    <td>{{ d.nota3_not }}</td>
+                                    <td>{{ d.fecha_not }}</td>
+                                    <td>{{ d.observaciones_not }}</td>
+                                    <td>{{ d.codigo_alu }}</td>
+                                    <td>{{ d.codigo_pro }}</td>
+                                    <td>{{ d.codigo_mat }}</td>
+                                    <td> <button class="btn btn-primary btn-sm" id="btn-edit{{d.codigo_not}}" data-bs-toggle="modal" data-bs-target="#modal{{d.codigo_not}}">Editar</button></td>
+                                    <td><a href="{{url_for('eliminar_nota', codigo_not=d.codigo_not)}}" class="btn btn-danger btn-sm">Eliminar</a></td>
+                                </tr>
+
+                                <!-- MODAL -->
+                                <div class="modal fade" id="modal{{d.codigo_not}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h1 class="modal-title fs-5" id="exampleModalLabel">{{d.codigo_not}}</h1>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <form action="{{ url_for('editar_nota', codigo_not=d.codigo_not) }}" method="post">
+                                                    <div class="mb-3">
+                                                        <label for="nota1_not" class="form-label">Nota 1:</label>
+                                                        <input type="number" step="0.01" class="form-control" id="nota1_not" name="nota1_not" value="{{d.nota1_not}}">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="nota2_not" class="form-label">Nota 2:</label>
+                                                        <input type="number" step="0.01" class="form-control" id="nota2_not" name="nota2_not" value="{{d.nota2_not}}">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="nota3_not" class="form-label">Nota 3:</label>
+                                                        <input type="number" step="0.01" class="form-control" id="nota3_not" name="nota3_not" value="{{d.nota3_not}}">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="fecha_not" class="form-label">Fecha:</label>
+                                                        <input type="date" class="form-control" id="fecha_not" name="fecha_not" value="{{d.fecha_not}}">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="observaciones_not" class="form-label">Observaciones:</label>
+                                                        <input type="text" class="form-control" id="observaciones_not" name="observaciones_not" value="{{d.observaciones_not}}">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="codigo_alu" class="form-label">Código Alumno:</label>
+                                                        <input type="text" class="form-control" id="codigo_alu" name="codigo_alu" value="{{d.codigo_alu}}">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="codigo_pro" class="form-label">Código Profesor:</label>
+                                                        <input type="text" class="form-control" id="codigo_pro" name="codigo_pro" value="{{d.codigo_pro}}">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="codigo_mat" class="form-label">Código Materia:</label>
+                                                        <input type="text" class="form-control" id="codigo_mat" name="codigo_mat" value="{{d.codigo_mat}}">
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="12">No se encontraron resultados para "{{ busqueda }}".</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</table>
+{% endblock %}
