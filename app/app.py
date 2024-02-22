@@ -79,6 +79,10 @@ def alumnos():
 def agregar_alumno():
     conn = None  
     try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Recuperar datos del formulario
         codigo_alu = request.form['codigo_alu']
         cedula_alu = request.form['cedula_alu']
         apellido_alu = request.form['apellido_alu']
@@ -90,47 +94,58 @@ def agregar_alumno():
         fecha_nac_alu = request.form['fecha_nac_alu']
         observaciones_alu = request.form['observaciones_alu']
 
+        # Verificar si los campos obligatorios tienen datos
         if codigo_alu and cedula_alu and apellido_alu and nombre_alu and direccion_alu and telefono_alu and email_alu and genero_alu and fecha_nac_alu:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            sql = "INSERT INTO alumno (codigo_alu, cedula_alu, apellido_alu, nombre_alu, direccion_alu, telefono_alu, email_alu, genero_alu, fecha_nac_alu, observaciones_alu) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            # Llamada al stored procedure
+            sql = "EXEC sp_agregar_alumno ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
             params = (codigo_alu, cedula_alu, apellido_alu, nombre_alu, direccion_alu, telefono_alu, email_alu, genero_alu, fecha_nac_alu, observaciones_alu)
             cursor.execute(sql, params)
             conn.commit()
-            cursor.close()
+
     except Exception as e:
         # Manejar el error apropiadamente
         print("Error al agregar alumno:", str(e))
     finally:
-        if conn:  # Verificar si la variable está definida antes de intentar cerrarla
+        if conn:
             conn.close()
+
     return redirect(url_for('alumnos'))
 
 # -- ALUMNOS: Buscar
 @app.route('/buscar-alumnos', methods=['POST'])
 def buscar_alumnos():
-    start_time = time.time()  
+    start_time = time.time()
     busqueda = request.form['busqueda']
     conn = None  
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM alumno WHERE codigo_alu LIKE ?", ('%' + busqueda + '%',))
+
+        # Llamada al stored procedure
+        sql = "EXEC sp_buscar_alumnos ?"
+        params = (busqueda,)
+        cursor.execute(sql, params)
+
+        # Recuperar resultados
         alumnos = cursor.fetchall()
         insertObject = []
         columnNames = [column[0] for column in cursor.description]
         for record in alumnos:
             insertObject.append(dict(zip(columnNames, record)))
+
         cursor.close()
 
         elapsed_time = time.time() - start_time
         elapsed_time_sec = int(elapsed_time)
         elapsed_time_ms = float((elapsed_time - elapsed_time_sec) * 1000)  # Extrae los milisegundos
+
         return render_template('alumnos.html', lista=insertObject, busqueda=busqueda, tiempo_respuesta=elapsed_time, tiempo_sec=elapsed_time_sec, tiempo_ms=elapsed_time_ms)
+
     except Exception as e:
         # Manejar el error apropiadamente
         print("Error al buscar alumnos:", str(e))
         return "Error al buscar el alumno: " + str(e), 500
+
     finally:
         if conn:
             conn.close()
@@ -138,32 +153,43 @@ def buscar_alumnos():
 # -- ALUMNOS: Desplegar x
 @app.route('/desplegar-x-alumnos', methods=['POST'])
 def desplegar_x_alumnos():
-    start_time = time.time()  
+    start_time = time.time()
     cantidad = int(request.form['cantidad'])
     conn = None  
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute(f"SELECT TOP {cantidad} * FROM alumno")
+
+        # Llamada al stored procedure
+        sql = "EXEC sp_desplegar_x_alumnos ?"
+        params = (cantidad,)
+        cursor.execute(sql, params)
+
+        # Recuperar resultados
         alumnos = cursor.fetchall()
         insertObject = []
         columnNames = [column[0] for column in cursor.description]
         for record in alumnos:
             insertObject.append(dict(zip(columnNames, record)))
+
         cursor.close()
+
         elapsed_time = time.time() - start_time
         elapsed_time_sec = int(elapsed_time)
         elapsed_time_ms = float((elapsed_time - elapsed_time_sec) * 1000)  # Extrae los milisegundos
 
         return render_template('alumnos.html', lista=insertObject, tiempo_respuesta=elapsed_time, tiempo_sec=elapsed_time_sec, tiempo_ms=elapsed_time_ms)
+
     except Exception as e:
         # Manejar el error apropiadamente
         print("Error al desplegar alumnos:", str(e))
         return "Error al desplegar alumnos: " + str(e), 500
+
     finally:
         if conn:
             conn.close()
 
+'''
 # -- ALUMNOS: Mostrar todos
 @app.route('/mostrar-todos-alumnos', methods=['POST'])
 def mostrar_todos_alumnos():
@@ -192,6 +218,7 @@ def mostrar_todos_alumnos():
     finally:
         if conn:
             conn.close()
+'''
 
 # -- ALUMNOS: Eliminar
 @app.route('/eliminar-alumno/<string:codigo_alu>')
@@ -200,9 +227,8 @@ def eliminar_alumno(codigo_alu):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        sql = "DELETE FROM alumno WHERE codigo_alu=?"
-        data = (codigo_alu,)
-        cursor.execute(sql, data)
+        # Llama al stored procedure para eliminar el alumno
+        cursor.execute("EXEC sp_eliminar_alumno ?", (codigo_alu,))
         conn.commit()
         cursor.close()
         return redirect(url_for('alumnos'))
@@ -232,9 +258,9 @@ def editar_alumno(codigo_alu):
 
         conn = get_db_connection()
         cursor = conn.cursor()
-        # Actualizar los atributos del registro en la base de datos
-        sql = "UPDATE alumno SET cedula_alu=?, apellido_alu=?, nombre_alu=?, direccion_alu=?, telefono_alu=?, email_alu=?, genero_alu=?, fecha_nac_alu=?, observaciones_alu=? WHERE codigo_alu=?"
-        params = (cedula_alu, apellido_alu, nombre_alu, direccion_alu, telefono_alu, email_alu, genero_alu, fecha_nac_alu, observaciones_alu, codigo_alu)
+        # Llamar al stored procedure para editar el alumno
+        sql = "EXEC sp_editar_alumno ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
+        params = (codigo_alu, cedula_alu, apellido_alu, nombre_alu, direccion_alu, telefono_alu, email_alu, genero_alu, fecha_nac_alu, observaciones_alu)
         cursor.execute(sql, params)
         conn.commit()
         cursor.close()
@@ -320,9 +346,8 @@ def agregar_profesor():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        sql = ("INSERT INTO profesor (codigo_pro, cedula_pro, apellido_pro, nombre_pro, "
-               "titulo_pro, direccion_pro, telefono_pro, email_pro, genero_pro, fecha_nac_pro, observaciones_pro) "
-               "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        # Llamada al stored procedure
+        sql = "EXEC sp_agregar_profesor ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
         params = (codigo_pro, cedula_pro, apellido_pro, nombre_pro, titulo_pro, 
                   direccion_pro, telefono_pro, email_pro, genero_pro, fecha_nac_pro, observaciones_pro)
         cursor.execute(sql, params)
@@ -345,18 +370,26 @@ def buscar_profesores():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM profesor WHERE codigo_pro LIKE ?", ('%' + busqueda + '%',))
+
+        # Llamada al stored procedure
+        sql = "EXEC sp_buscar_profesores ?"
+        params = (busqueda,)
+        cursor.execute(sql, params)
+
+        # Recuperar resultados
         profesores = cursor.fetchall()
         insertObject = []
         columnNames = [column[0] for column in cursor.description]
         for record in profesores:
             insertObject.append(dict(zip(columnNames, record)))
+
         cursor.close()
-        elapsed_time = time.time() - start_time # Calcula el tiempo transcurrido
-        elapsed_time_sec = int(elapsed_time) # Extrae los segundos enteros
-        elapsed_time_ms = float((elapsed_time - elapsed_time_sec) * 1000) # Extrae los milisegundos
+        elapsed_time = time.time() - start_time  # Calcula el tiempo transcurrido
+        elapsed_time_sec = int(elapsed_time)  # Extrae los segundos enteros
+        elapsed_time_ms = float((elapsed_time - elapsed_time_sec) * 1000)  # Extrae los milisegundos
 
         return render_template('profesores.html', lista=insertObject, busqueda=busqueda, tiempo_respuesta=elapsed_time, tiempo_sec=elapsed_time_sec, tiempo_ms=elapsed_time_ms)
+
     except Exception as e:
         # Manejar el error apropiadamente
         print("Error al buscar profesores:", str(e))
@@ -365,28 +398,35 @@ def buscar_profesores():
         if conn:
             conn.close()
 
+# -- PROFESORES: Desplegar x profesores
 @app.route('/desplegar-x-profesores', methods=['POST'])
 def desplegar_x_profesores():
-    start_time = time.time() 
-
+    start_time = time.time()
     cantidad = int(request.form['cantidad'])
-    conn = None  
+    conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute(f"SELECT TOP {cantidad} * FROM profesor")
+
+        # Llamada al stored procedure
+        sql = "EXEC sp_desplegar_x_profesores ?"
+        params = (cantidad,)
+        cursor.execute(sql, params)
+
+        # Recuperar resultados
         profesores = cursor.fetchall()
         insertObject = []
         columnNames = [column[0] for column in cursor.description]
         for record in profesores:
             insertObject.append(dict(zip(columnNames, record)))
-        cursor.close()
 
-        elapsed_time = time.time() - start_time # Calcula el tiempo transcurrido
-        elapsed_time_sec = int(elapsed_time) # Extrae los segundos enteros
-        elapsed_time_ms = float((elapsed_time - elapsed_time_sec) * 1000) # Extrae los milisegundos
+        cursor.close()
+        elapsed_time = time.time() - start_time  # Calcula el tiempo transcurrido
+        elapsed_time_sec = int(elapsed_time)  # Extrae los segundos enteros
+        elapsed_time_ms = float((elapsed_time - elapsed_time_sec) * 1000)  # Extrae los milisegundos
 
         return render_template('profesores.html', lista=insertObject, tiempo_respuesta=elapsed_time, tiempo_sec=elapsed_time_sec, tiempo_ms=elapsed_time_ms)
+
     except Exception as e:
         # Manejar el error apropiadamente
         print("Error al desplegar profesores:", str(e))
@@ -395,6 +435,7 @@ def desplegar_x_profesores():
         if conn:
             conn.close()
 
+'''
 @app.route('/mostrar-todos-profesores', methods=['POST'])
 def mostrar_todos_profesores():
     start_time = time.time()  
@@ -422,17 +463,25 @@ def mostrar_todos_profesores():
     finally:
         if conn:
             conn.close()
+'''
 
 # -- PROFESORES: Eliminar
 @app.route('/eliminar-profesor/<string:codigo_pro>')
 def eliminar_profesor(codigo_pro):
-    conn = None  
+    conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM profesor WHERE codigo_pro = ?", [codigo_pro])
+
+        # Llamada al stored procedure
+        sql = "EXEC sp_eliminar_profesor ?"
+        params = (codigo_pro,)
+        cursor.execute(sql, params)
+
+        # Confirmar la transacción
         conn.commit()
         cursor.close()
+
     except Exception as e:
         # Manejar el error apropiadamente
         print("Error al eliminar el profesor:", str(e))
@@ -440,6 +489,7 @@ def eliminar_profesor(codigo_pro):
     finally:
         if conn:
             conn.close()
+
     return redirect(url_for('profesores'))
 
 # -- PROFESORES: Editar
@@ -461,13 +511,13 @@ def editar_profesor(codigo_pro):
 
         conn = get_db_connection()
         cursor = conn.cursor()
-        # Actualizar los atributos del registro en la base de datos
-        sql = ("UPDATE profesor SET cedula_pro = ?, apellido_pro = ?, nombre_pro = ?, "
-               "titulo_pro = ?, direccion_pro = ?, telefono_pro = ?, email_pro = ?, "
-               "genero_pro = ?, fecha_nac_pro = ?, observaciones_pro = ? WHERE codigo_pro = ?")
-        params = (cedula_pro, apellido_pro, nombre_pro, titulo_pro, direccion_pro, 
-                  telefono_pro, email_pro, genero_pro, fecha_nac_pro, observaciones_pro, codigo_pro)
+        
+        # Llamada al stored procedure
+        sql = ("EXEC sp_editar_profesor ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?")
+        params = (codigo_pro, cedula_pro, apellido_pro, nombre_pro, titulo_pro, direccion_pro, 
+                  telefono_pro, email_pro, genero_pro, fecha_nac_pro, observaciones_pro)
         cursor.execute(sql, params)
+        
         conn.commit()
         cursor.close()
     except Exception as e:
@@ -520,7 +570,6 @@ def agregar_datos_falsos_materias():
         if conn:
             conn.close()
 '''
-
 
 @app.route('/materias')
 def materias():
@@ -876,4 +925,4 @@ def editar_nota(codigo_not):
 
 
 if __name__=='__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5002)
