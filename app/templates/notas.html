@@ -2,11 +2,12 @@
 {% extends './layout.html' %}
 
 <!-- TITULO -->
-{% block title %}Notas{% endblock %}
+{% block title %}{% endblock %}
 
 <!-- CUERPO -->
 {% block body %}
-<h1 class="text-center mt-5 mb-5">Notas</h1>
+<div> <h1 class="text-center mt-4 mb-4 text-primary">Sistemas de bases de datos - NRC 14293</h1> </div>
+<div> <h2 class="text-center mt-4 mb-4"> Notas </h2> </div>
 
 <table>
     <div class="row">
@@ -35,15 +36,15 @@
                         </div>
                         <div class="col">
                             <label>Nota 1: </label>
-                            <input type="number" step="0.01" class="form-control mb-3" name="nota1_not">
+                            <input type="number" step="0.01" class="form-control mb-3" name="nota1_not" min="1" required>
                         </div>
                         <div class="col">
                             <label>Nota 2: </label>
-                            <input type="number" step="0.01" class="form-control mb-3" name="nota2_not">
+                            <input type="number" step="0.01" class="form-control mb-3" name="nota2_not" min="1" required>
                         </div>
                         <div class="col">
                             <label>Nota 3: </label>
-                            <input type="number" step="0.01" class="form-control mb-3" name="nota3_not">
+                            <input type="number" step="0.01" class="form-control mb-3" name="nota3_not" min="1" required>
                         </div>
                         <div class="col">
                             <label>Fecha: </label>
@@ -127,11 +128,50 @@
                                     <td>{{ d.codigo_alu }}</td>
                                     <td>{{ d.codigo_pro }}</td>
                                     <td>{{ d.codigo_mat }}</td>
-                                    <td> <button class="btn btn-primary btn-sm" id="btn-edit{{d.codigo_not}}" data-bs-toggle="modal" data-bs-target="#modal{{d.codigo_not}}">Editar</button></td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm btn-editar">Editar</button>
+                                        <form action="{{ url_for('editar_nota', codigo_not=d.codigo_not) }}" method="post" class="form-editar" style="display: none;">
+                                            <div class="mb-3">
+                                                <label for="nota1_not" class="form-label">Nota 1:</label>
+                                                <input type="number" step="0.01" class="form-control" id="nota1_not" name="nota1_not" value="{{d.nota1_not}}" min="1" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="nota2_not" class="form-label">Nota 2:</label>
+                                                <input type="number" step="0.01" class="form-control" id="nota2_not" name="nota2_not" value="{{d.nota2_not}}" min="1" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="nota3_not" class="form-label">Nota 3:</label>
+                                                <input type="number" step="0.01" class="form-control" id="nota3_not" name="nota3_not" value="{{d.nota3_not}}" min="1" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="fecha_not" class="form-label">Fecha:</label>
+                                                <input type="date" class="form-control" id="fecha_not" name="fecha_not" value="{{d.fecha_not}}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="observaciones_not" class="form-label">Observaciones:</label>
+                                                <input type="text" class="form-control" id="observaciones_not" name="observaciones_not" value="{{d.observaciones_not}}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="codigo_alu" class="form-label">Código Alumno:</label>
+                                                <input type="text" class="form-control" id="codigo_alu" name="codigo_alu" value="{{d.codigo_alu}}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="codigo_pro" class="form-label">Código Profesor:</label>
+                                                <input type="text" class="form-control" id="codigo_pro" name="codigo_pro" value="{{d.codigo_pro}}">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="codigo_mat" class="form-label">Código Materia:</label>
+                                                <input type="text" class="form-control" id="codigo_mat" name="codigo_mat" value="{{d.codigo_mat}}">
+                                            </div>
+                                            
+                                            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                                            <button type="button" class="btn btn-secondary" id="cerrarForm">Cerrar</button>
+                                        </form>
+                                    </td>
                                     <td><a href="{{url_for('eliminar_nota', codigo_not=d.codigo_not)}}" class="btn btn-danger btn-sm">Eliminar</a></td>
                                 </tr>
 
-                                <!-- MODAL -->
+                                <!-- MODAL
                                 <div class="modal fade" id="modal{{d.codigo_not}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                     <div class="modal-dialog">
                                         <div class="modal-content">
@@ -180,7 +220,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                </div> -->
                             {% endfor %}
                         {% else %}
                         <tr>
@@ -193,4 +233,23 @@
         </div>
     </div>
 </table>
+<script>
+    // Agregar evento clic al botón "Cerrar" en los formularios de edición
+    var cerrarFormButtons = document.querySelectorAll('.form-editar #cerrarForm');
+    cerrarFormButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            var form = button.closest('.form-editar');
+            form.style.display = 'none';
+        });
+    });
+
+    // Agregar evento clic al botón "Editar" para mostrar el formulario de edición
+    var editarButtons = document.querySelectorAll('.btn-editar');
+    editarButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            var form = button.nextElementSibling; // Obtener el formulario siguiente
+            form.style.display = 'block';
+        });
+    });
+</script>
 {% endblock %}

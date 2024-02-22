@@ -2,11 +2,12 @@
 {% extends './layout.html' %}
 
 <!-- TITULO -->
-{% block title %}{{ data.titulo }}{% endblock %}
+{% block title %}{% endblock %}
 
 <!-- CUERPO -->
 {% block body %}
-<h1 class="text-center mt-5 mb-5 text-primary">{{ data.materia }}</h1>
+<div> <h1 class="text-center mt-4 mb-4 text-primary">Sistemas de bases de datos - NRC 14293</h1> </div>
+<div> <h2 class="text-center mt-4 mb-4"> Profesores </h2> </div>
 
 <table>
     <div class="row">
@@ -139,11 +140,38 @@
                                     <td>{{d.genero_pro}}</td>
                                     <td>{{d.fecha_nac_pro}}</td>
                                     <td>{{d.observaciones_pro}}</td>
-                                    <td> <button class="btn btn-primary btn-sm" id="btn-edit{{d.codigo_pro}}" data-bs-toggle="modal" data-bs-target="#modal{{d.codigo_pro}}">Editar</button></td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm btn-editar">Editar</button>
+                                        <form action="{{ url_for('editar_profesor', codigo_pro=d.codigo_pro) }}" method="post" class="form-editar" style="display: none;">
+                                            <label>Cédula: </label>
+                                            <input type="text" class="form-control mb-3" name="cedula_pro" value="{{d.cedula_pro}}">
+                                            <label>Apellido: </label>
+                                            <input type="text" class="form-control mb-3" name="apellido_pro" value="{{d.apellido_pro}}">
+                                            <label>Nombre: </label>
+                                            <input type="text" class="form-control mb-3" name="nombre_pro" value="{{d.nombre_pro}}">
+                                            <label>Título: </label>
+                                            <input type="text" class="form-control mb-3" name="titulo_pro" value="{{d.titulo_pro}}">
+                                            <label>Dirección: </label>
+                                            <input type="text" class="form-control mb-3" name="direccion_pro" value="{{d.direccion_pro}}">
+                                            <label>Teléfono: </label>
+                                            <input type="text" class="form-control mb-3" name="telefono_pro" value="{{d.telefono_pro}}">
+                                            <label>E-mail: </label>
+                                            <input type="text" class="form-control mb-3" name="email_pro" value="{{d.email_pro}}">
+                                            <label>Género: </label>
+                                            <input type="text" class="form-control mb-3" name="genero_pro" value="{{d.genero_pro}}">
+                                            <label>Fecha de nacimiento: </label>
+                                            <input type="date" class="form-control mb-3" name="fecha_nac_pro" value="{{d.fecha_nac_pro}}">
+                                            <label>Observaciones: </label>
+                                            <input type="text" class="form-control mb-3" name="observaciones_pro" value="{{d.observaciones_pro}}">
+                                        
+                                            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                                            <button type="button" class="btn btn-secondary" id="cerrarForm">Cerrar</button>
+                                        </form>
+                                    </td>
                                     <td><a href="{{url_for('eliminar_profesor', codigo_pro=d.codigo_pro)}}" class="btn btn-danger btn-sm">Eliminar</a></td>
                                 </tr>
 
-                                <!-- MODAL -->
+                                <!-- MODAL
                                 <div class="modal fade" id="modal{{d.codigo_pro}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                     <div class="modal-dialog">
                                     <div class="modal-content">
@@ -181,7 +209,7 @@
                                         </div>
                                     </div>
                                     </div>
-                                </div>
+                                </div> -->
                             {% endfor %}
                         {% else %}
                         <tr>
@@ -195,4 +223,23 @@
         </div>
     </div>
 </table>
+<script>
+    // Agregar evento clic al botón "Cerrar" en los formularios de edición
+    var cerrarFormButtons = document.querySelectorAll('.form-editar #cerrarForm');
+    cerrarFormButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            var form = button.closest('.form-editar');
+            form.style.display = 'none';
+        });
+    });
+
+    // Agregar evento clic al botón "Editar" para mostrar el formulario de edición
+    var editarButtons = document.querySelectorAll('.btn-editar');
+    editarButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            var form = button.nextElementSibling; // Obtener el formulario siguiente
+            form.style.display = 'block';
+        });
+    });
+</script>
 {% endblock %}

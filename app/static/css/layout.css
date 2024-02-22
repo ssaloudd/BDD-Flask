@@ -16,3 +16,7 @@ td, th {
     padding: 10px;
     text-align: left;
 }
+
+.form-editar {
+    display: none;
+}
