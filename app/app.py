@@ -162,7 +162,7 @@ def desplegar_x_alumnos():
 
         # Generar e insertar registros falsos en la tabla alumno
         for i in range(cantidad):
-            codigo_alu = f'L{i+1}'
+            codigo_alu = f'{i+1}'
             cedula_alu = '0503121212'
             apellido_alu = 'Apellido'
             nombre_alu = 'eee'
@@ -186,42 +186,13 @@ def desplegar_x_alumnos():
         conn_fake.close()
 
         # OBTENER DATOS REALES
-        conn = get_db_connection()  # Establecer conexión con la base de datos real
-        
-        cursor1 = conn.cursor()
-        # Iniciar cronómetro para la consulta SQL normal
-        start_time_sql = time.time()
-        # Realizar la consulta SQL normal
-        sql1 = "SELECT TOP (?) * FROM alumno"
-        params1 = (cantidad,)
-        cursor1.execute(sql1, params1)        
-        # Recuperar resultados
-        alumnos1 = cursor1.fetchall()
-        insertObject = []
-        columnNames1 = [column[0] for column in cursor1.description]
-        for record1 in alumnos1:
-            insertObject.append(dict(zip(columnNames1, record1)))
-        cursor1.close()
-        # Detener cronómetro y calcular tiempo transcurrido para la consulta SQL normal
-        elapsed_time_sql = time.time() - start_time_sql
+        conn_real = get_db_connection()  # Establecer conexión con la base de datos real
+        elapsed_time_sql = consulta_sql_normal(conn_real, cantidad)
+        time.sleep(0.7)
+        elapsed_time_sp = llamada_stored_procedure(conn_real, cantidad)
+        conn_real.close()  # Cerrar la conexión
 
-        cursor = conn.cursor()
-        # Llamada al stored procedure - Iniciar cronómetro
-        start_time_sp = time.time()
-        sql = "EXEC sp_desplegar_x_alumnos ?"
-        params = (cantidad,)
-        cursor.execute(sql, params)
-        # Recuperar resultados
-        alumnos = cursor.fetchall()
-        insertObject = []
-        columnNames = [column[0] for column in cursor.description]
-        for record in alumnos:
-            insertObject.append(dict(zip(columnNames, record)))
-        cursor.close()
-        # Detener cronómetro y calcular tiempo transcurrido
-        elapsed_time_sp = time.time() - start_time_sp
-
-        return render_template('alumnos.html', lista=insertObject, elapsed_time_sp=elapsed_time_sp, elapsed_time_sql=elapsed_time_sql)
+        return render_template('alumnosDesplegar.html', elapsed_time_sql=elapsed_time_sql, elapsed_time_sp=elapsed_time_sp)
 
     except Exception as e:
         # Manejar el error apropiadamente
@@ -231,6 +202,36 @@ def desplegar_x_alumnos():
     finally:
         if conn:
             conn.close()
+
+def consulta_sql_normal(conn, cantidad):
+    cursor = conn.cursor()
+    start_time_sql = time.time()
+    sql = "SELECT TOP (?) * FROM alumno"
+    params = (cantidad,)
+    cursor.execute(sql, params)
+    alumnos = cursor.fetchall()
+    insertObject = []
+    columnNames = [column[0] for column in cursor.description]
+    for record in alumnos:
+        insertObject.append(dict(zip(columnNames, record)))
+    cursor.close()
+    elapsed_time_sql = time.time() - start_time_sql
+    return elapsed_time_sql
+
+def llamada_stored_procedure(conn, cantidad):
+    cursor = conn.cursor()
+    start_time_sp = time.time()
+    sql = "EXEC sp_desplegar_x_alumnos ?"
+    params = (cantidad,)
+    cursor.execute(sql, params)
+    alumnos = cursor.fetchall()
+    insertObject = []
+    columnNames = [column[0] for column in cursor.description]
+    for record in alumnos:
+        insertObject.append(dict(zip(columnNames, record)))
+    cursor.close()
+    elapsed_time_sp = time.time() - start_time_sp
+    return elapsed_time_sp
 
 
 
