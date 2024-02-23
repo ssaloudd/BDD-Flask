@@ -153,32 +153,75 @@ def buscar_alumnos():
 # -- ALUMNOS: Desplegar x
 @app.route('/desplegar-x-alumnos', methods=['POST'])
 def desplegar_x_alumnos():
-    start_time = time.time()
     cantidad = int(request.form['cantidad'])
     conn = None  
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        # AGREGAR DATOS FALSOS
+        conn_fake = get_db_connection()  # Establecer conexión con base de datos falsa
+        cursor_fake = conn_fake.cursor()
 
-        # Llamada al stored procedure
+        # Generar e insertar registros falsos en la tabla alumno
+        for i in range(cantidad):
+            codigo_alu = f'L{i+1}'
+            cedula_alu = '0503121212'
+            apellido_alu = 'Apellido'
+            nombre_alu = 'eee'
+            direccion_alu = 'aaa'
+            telefono_alu = '0981234567'
+            email_alu = ''
+            genero_alu = random.choice(['Heterosexual', 'Homosexual'])
+            fecha_nac_alu = '2002-03-05'
+            observaciones_alu = ''
+
+            sql_fake = ("INSERT INTO alumno (codigo_alu, cedula_alu, apellido_alu, nombre_alu, "
+                        "direccion_alu, telefono_alu, email_alu, genero_alu, fecha_nac_alu, observaciones_alu) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+            values_fake = (codigo_alu, cedula_alu, apellido_alu, nombre_alu, direccion_alu, telefono_alu, email_alu, genero_alu, fecha_nac_alu, observaciones_alu)
+
+            cursor_fake.execute(sql_fake, values_fake)
+
+        # Confirmar y cerrar la conexión a la base de datos falsa
+        conn_fake.commit()
+        cursor_fake.close()
+        conn_fake.close()
+
+        # OBTENER DATOS REALES
+        conn = get_db_connection()  # Establecer conexión con la base de datos real
+        
+        cursor1 = conn.cursor()
+        # Iniciar cronómetro para la consulta SQL normal
+        start_time_sql = time.time()
+        # Realizar la consulta SQL normal
+        sql1 = "SELECT TOP (?) * FROM alumno"
+        params1 = (cantidad,)
+        cursor1.execute(sql1, params1)        
+        # Recuperar resultados
+        alumnos1 = cursor1.fetchall()
+        insertObject = []
+        columnNames1 = [column[0] for column in cursor1.description]
+        for record1 in alumnos1:
+            insertObject.append(dict(zip(columnNames1, record1)))
+        cursor1.close()
+        # Detener cronómetro y calcular tiempo transcurrido para la consulta SQL normal
+        elapsed_time_sql = time.time() - start_time_sql
+
+        cursor = conn.cursor()
+        # Llamada al stored procedure - Iniciar cronómetro
+        start_time_sp = time.time()
         sql = "EXEC sp_desplegar_x_alumnos ?"
         params = (cantidad,)
         cursor.execute(sql, params)
-
         # Recuperar resultados
         alumnos = cursor.fetchall()
         insertObject = []
         columnNames = [column[0] for column in cursor.description]
         for record in alumnos:
             insertObject.append(dict(zip(columnNames, record)))
-
         cursor.close()
+        # Detener cronómetro y calcular tiempo transcurrido
+        elapsed_time_sp = time.time() - start_time_sp
 
-        elapsed_time = time.time() - start_time
-        elapsed_time_sec = int(elapsed_time)
-        elapsed_time_ms = float((elapsed_time - elapsed_time_sec) * 1000)  # Extrae los milisegundos
-
-        return render_template('alumnos.html', lista=insertObject, tiempo_respuesta=elapsed_time, tiempo_sec=elapsed_time_sec, tiempo_ms=elapsed_time_ms)
+        return render_template('alumnos.html', lista=insertObject, elapsed_time_sp=elapsed_time_sp, elapsed_time_sql=elapsed_time_sql)
 
     except Exception as e:
         # Manejar el error apropiadamente
@@ -189,36 +232,33 @@ def desplegar_x_alumnos():
         if conn:
             conn.close()
 
-'''
-# -- ALUMNOS: Mostrar todos
-@app.route('/mostrar-todos-alumnos', methods=['POST'])
-def mostrar_todos_alumnos():
-    start_time = time.time()
+
+
+
+# -- ALUMNOS: Eliminar los x desplegados
+@app.route('/eliminar-registros-alumnos', methods=['POST'])
+def eliminar_registros_alumnos():
     conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM alumno")
-        alumnos = cursor.fetchall()
-        insertObject = []
-        columnNames = [column[0] for column in cursor.description]
-        for record in alumnos:
-            insertObject.append(dict(zip(columnNames, record)))
-        cursor.close()
-        elapsed_time = time.time() - start_time
-        elapsed_time_sec = int(elapsed_time)
-        elapsed_time_ms = float((elapsed_time - elapsed_time_sec) * 1000)  # Extrae los milisegundos
 
-        return render_template('alumnos.html', lista=insertObject, tiempo_respuesta=elapsed_time,
-                               tiempo_sec=elapsed_time_sec, tiempo_ms=elapsed_time_ms)
+        # Sentencia SQL para eliminar todos los registros de la tabla 'alumno'
+        sql = "DELETE FROM alumno"
+
+        cursor.execute(sql)
+        conn.commit()
+
     except Exception as e:
         # Manejar el error apropiadamente
-        print("Error al mostrar todos los alumnos:", str(e))
-        return "Error al mostrar los alumnos: " + str(e), 500
+        print("Error al eliminar registros de alumnos:", str(e))
+        return "Error al eliminar registros de alumnos: " + str(e), 500
+
     finally:
         if conn:
             conn.close()
-'''
+
+    return redirect(url_for('alumnos'))
 
 # -- ALUMNOS: Eliminar
 @app.route('/eliminar-alumno/<string:codigo_alu>')
@@ -925,4 +965,4 @@ def editar_nota(codigo_not):
 
 
 if __name__=='__main__':
-    app.run(debug=True, port=5002)
+    app.run(host='0.0.0.0', port=5000)

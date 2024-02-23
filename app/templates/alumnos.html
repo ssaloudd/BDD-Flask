@@ -90,13 +90,25 @@
                         <button class="btn btn-outline-secondary" type="submit">Desplegar</button>
                     </div>
                 </form>
+                <form action="{{ url_for('eliminar_registros_alumnos') }}" method="POST">
+                    <button class="btn btn-danger" type="submit">Eliminar registros</button>
+                </form>
 
-                <div id="tiempo-respuesta">
-                    {% if tiempo_respuesta %}
-                    Tiempo de respuesta: {{ tiempo_respuesta }} segundos. Exactamente: {{ tiempo_sec }} segundos y {{
-                    tiempo_ms }} milisegundos.
+                <div>
+                    {% if elapsed_time_sql %}
+                        <script>
+                            alert("Tiempo de respuesta de consulta SQL normal: {{ elapsed_time_sql }} segundos.");
+                        </script>
+                    {% endif %}
+                    {% if elapsed_time_sp %}
+                        <script>
+                            alert("Tiempo de respuesta del stored procedure: {{ elapsed_time_sp }} segundos.");
+                        </script>
                     {% endif %}
                 </div>
+                
+                
+             
 
 
                 <!-- TABLA -->
@@ -171,7 +183,7 @@
                                     class="btn btn-danger btn-sm">Eliminar</a></td>
                         </tr>
 
-                        <!-- MODAL
+                        <!--MODAL
                         <div class="modal fade" id="modalEditar{{d.codigo_alu}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
