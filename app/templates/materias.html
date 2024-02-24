@@ -9,7 +9,7 @@
 <div> <h1 class="text-center mt-4 mb-4 text-primary">Sistemas de bases de datos - NRC 14293</h1> </div>
 <div> <h2 class="text-center mt-4 mb-4"> Materias </h2> </div>
 
-<table>
+<div>
     <div class="row">
         <div class="col-12 col-sm-12 col-md-12 col-lg-12">
             <div id="content">
@@ -77,18 +77,12 @@
                         <button class="btn btn-outline-secondary" type="submit">Desplegar</button>
                     </div>
                 </form>
-                <!--
+                
                 <form action="{{ url_for('mostrar_todas_materias') }}" method="POST">
                     <div class="input-group mb-3">
                         <button class="btn btn-outline-secondary" type="submit">Mostrar todos</button>
                     </div>
-                </form>-->
-
-                <div id="tiempo-respuesta">
-                    {% if tiempo_respuesta %}
-                        Tiempo de respuesta: {{ tiempo_respuesta }} segundos. Exactamente: {{ tiempo_sec }} segundos y {{ tiempo_ms }} milisegundos.
-                    {% endif %}
-                </div>
+                </form>
 
                 <!-- TABLA -->
                 <table class="table table-bordered">
@@ -181,7 +175,8 @@
             </div>
         </div>
     </div>
-</table>
+</div>
+
 <script>
     // Agregar evento clic al botón "Cerrar" en los formularios de edición
     var cerrarFormButtons = document.querySelectorAll('.form-editar #cerrarForm');

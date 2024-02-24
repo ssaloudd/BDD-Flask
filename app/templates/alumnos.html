@@ -9,7 +9,7 @@
 <div> <h1 class="text-center mt-4 mb-4 text-primary">Sistemas de bases de datos - NRC 14293</h1> </div>
 <div> <h2 class="text-center mt-4 mb-4"> Alumnos </h2> </div>
 
-<table>
+<div>
     <div class="row">
         <div class="col-12 col-sm-12 col-md-12 col-lg-12">
             <div id="content">
@@ -27,7 +27,7 @@
     <div class="container">
         <div class="card">
             <div class="card-body">
-                <form action="{{ url_for('agregar_alumno') }}" method="POST">
+                <form action="/agregar-alumno" method="POST">
                     <div class="row mb-3">
                         <div class="col">
                             <label>Código: </label>
@@ -90,23 +90,13 @@
                         <button class="btn btn-outline-secondary" type="submit">Desplegar</button>
                     </div>
                 </form>
-                <form action="{{ url_for('eliminar_registros_alumnos') }}" method="POST">
-                    <button class="btn btn-danger" type="submit">Eliminar registros</button>
+
+                <form action="{{ url_for('mostrar_todos_alumnos') }}" method="POST">
+                    <div class="input-group mb-3">
+                        <button class="btn btn-outline-secondary" type="submit">Mostrar todos</button>
+                    </div>
                 </form>
 
-                <div>
-                    {% if elapsed_time_sql %}
-                        <script>
-                            alert("Tiempo de respuesta de consulta SQL normal: {{ elapsed_time_sql }} segundos.");
-                        </script>
-                    {% endif %}
-                    {% if elapsed_time_sp %}
-                        <script>
-                            alert("Tiempo de respuesta del stored procedure: {{ elapsed_time_sp }} segundos.");
-                        </script>
-                    {% endif %}
-                </div>
-                
                 <!-- TABLA -->
                 <table class="table table-bordered">
                     <thead>
@@ -179,7 +169,7 @@
                                     class="btn btn-danger btn-sm">Eliminar</a></td>
                         </tr>
 
-                        <!--MODAL
+                        <!-- MODAL
                         <div class="modal fade" id="modalEditar{{d.codigo_alu}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
@@ -240,7 +230,8 @@
         </div>
     </div>
 
-</table>
+</div>
+
 <script>
     // Agregar evento clic al botón "Cerrar" en los formularios de edición
     var cerrarFormButtons = document.querySelectorAll('.form-editar #cerrarForm');
