@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, url_for, redirect
+from flask import Flask, render_template, request, url_for, redirect, session
 #from flask_mysqldb import MySQL
 
+from datetime import datetime
 from faker import Faker #
 import random #
 import time #
@@ -19,8 +20,27 @@ conn_str = f'DRIVER={driver};SERVER={server};DATABASE={database};Trusted_Connect
 def get_db_connection():
     return pyodbc.connect(conn_str)
 
+app.secret_key = '12345'
+# ---------- LOGIN ----------
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        # Lógica de autenticación, deberías validar las credenciales aquí
+        # Ejemplo: Supongamos que el formulario tiene campos 'username' y 'password'
+        username = request.form['username']
+        # Realiza la validación del usuario y la contraseña aquí
+        # ...
+        
+        # Si las credenciales son válidas, guarda el nombre de usuario en la sesión
+        session['username'] = username
+        
+        # Redirige a la página de inicio o a donde sea necesario
+        return redirect(url_for('index'))
+    
+    return render_template('login.html')
+
 # ---------- INICIO ----------
-@app.route('/')
+@app.route('/index')
 def index():
     return render_template('index.html')
 
@@ -93,9 +113,17 @@ def agregar_alumno():
         if codigo_alu and cedula_alu and apellido_alu and nombre_alu and direccion_alu and telefono_alu and email_alu and genero_alu and fecha_nac_alu:
             conn = get_db_connection()
             cursor = conn.cursor()
-            sql = "INSERT INTO alumno (codigo_alu, cedula_alu, apellido_alu, nombre_alu, direccion_alu, telefono_alu, email_alu, genero_alu, fecha_nac_alu, observaciones_alu) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-            params = (codigo_alu, cedula_alu, apellido_alu, nombre_alu, direccion_alu, telefono_alu, email_alu, genero_alu, fecha_nac_alu, observaciones_alu)
-            cursor.execute(sql, params)
+            
+            # Agregar alumno a la tabla 'alumno'
+            sql_alumno = "INSERT INTO alumno (codigo_alu, cedula_alu, apellido_alu, nombre_alu, direccion_alu, telefono_alu, email_alu, genero_alu, fecha_nac_alu, observaciones_alu) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            params_alumno = (codigo_alu, cedula_alu, apellido_alu, nombre_alu, direccion_alu, telefono_alu, email_alu, genero_alu, fecha_nac_alu, observaciones_alu)  # Recupera el nombre de usuario de la sesión
+            cursor.execute(sql_alumno, params_alumno)
+
+            # Agregar alumno a la tabla 'alumnoback'
+            sql_alumnoback = "INSERT INTO alumnoback (codigo_alubk, cedula_alubk, apellido_alubk, nombre_alubk, direccion_alubk, telefono_alubk, email_alubk, genero_alubk, fecha_nac_alubk, observaciones_alubk, usuarioInsert_alubk, fechaInsert_alubk) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            params_alumnoback = (codigo_alu, cedula_alu, apellido_alu, nombre_alu, direccion_alu, telefono_alu, email_alu, genero_alu, fecha_nac_alu, observaciones_alu, session.get('username', 'unknown'), datetime.now())
+            cursor.execute(sql_alumnoback, params_alumnoback)
+
             conn.commit()
             cursor.close()
     except Exception as e:
