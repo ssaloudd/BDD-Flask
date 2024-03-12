@@ -25,16 +25,8 @@ app.secret_key = '12345'
 @app.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # Lógica de autenticación, deberías validar las credenciales aquí
-        # Ejemplo: Supongamos que el formulario tiene campos 'username' y 'password'
         username = request.form['username']
-        # Realiza la validación del usuario y la contraseña aquí
-        # ...
-        
-        # Si las credenciales son válidas, guarda el nombre de usuario en la sesión
         session['username'] = username
-        
-        # Redirige a la página de inicio o a donde sea necesario
         return redirect(url_for('index'))
     
     return render_template('login.html')
