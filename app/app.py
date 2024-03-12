@@ -1,9 +1,7 @@
 from flask import Flask, render_template, request, url_for, redirect, session
-#from flask_mysqldb import MySQL
 
 from datetime import datetime
 from faker import Faker #
-import random #
 import time #
 import pyodbc
 fake = Faker()
@@ -22,6 +20,23 @@ def get_db_connection():
     return pyodbc.connect(conn_str)
 
 app.secret_key = os.urandom(24)
+
+# Función para obtener un usuario por su nombre de usuario
+def obtener_usuario_por_nombre(nombre_usu):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM usuario WHERE nombre_usu = ?", (nombre_usu,))
+    usuario = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return usuario
+# Función para verificar si el usuario tiene permiso de acceso a una página específica
+def verificar_permiso_usuario(usuario, permiso):
+    if usuario[permiso]:
+        return True
+    else:
+        return False
+
 # ---------- LOGIN ----------
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -61,13 +76,33 @@ def index():
     return render_template('index.html')
 
 # ---------- PERMISOS ----------
+# Función para obtener los permisos de un usuario
+def obtener_permisos_usuario(nombre_usu):
+    usuario = obtener_usuario_por_nombre(nombre_usu)
+    if usuario:
+        return {
+            'permisoAlumno_usu': usuario[3],  # Accede al cuarto elemento de la tupla
+            'permisoProfesor_usu': usuario[4], # Accede al quinto elemento de la tupla
+            'permisoMateria_usu': usuario[5],  # Accede al sexto elemento de la tupla
+            'permisoNota_usu': usuario[6]       # Accede al séptimo elemento de la tupla
+        }
+    else:
+        return None
+    
 @app.route('/permisos')
 def permisos():
     # Verificar si el usuario ha iniciado sesión
     if 'username' in session:
         # Verificar si el usuario es "admin"
         if session['username'] == "admin":
-            return render_template('permisos.html')
+            # Obtener los permisos del usuario actual
+            permisos_usuario = obtener_permisos_usuario(session['username'])
+            print(permisos_usuario)
+            if permisos_usuario:
+                return render_template('permisos.html', permisos=permisos_usuario)
+            else:
+                # Manejar el caso en el que no se puedan obtener los permisos del usuario
+                return render_template('index.html', message="No se pudieron obtener los permisos del usuario.")
         else:
             # Redirigir a otra página o mostrar un mensaje de error
             return render_template('index.html', message="No tienes permiso para acceder a esta página.")
@@ -83,13 +118,26 @@ def agregar_usuario():
         nombre_usu = request.form['nombre_usu']
         contrasena_usu = request.form['contrasena_usu']
 
+        # Obtener los valores de los permisos desde el formulario y convertirlos a booleanos
+        permiso_alumno = 1 if 'permisoAlumno_usu' in request.form else 0
+        permiso_profesor = 1 if 'permisoProfesor_usu' in request.form else 0
+        permiso_materia = 1 if 'permisoMateria_usu' in request.form else 0
+        permiso_nota = 1 if 'permisoNota_usu' in request.form else 0
+
         if nombre_usu and contrasena_usu:
+            # Verificar si el nombre de usuario ya existe en la base de datos
             conn = get_db_connection()
             cursor = conn.cursor()
+            cursor.execute("SELECT * FROM usuario WHERE nombre_usu = ?", (nombre_usu,))
+            existing_user = cursor.fetchone()
+
+            if existing_user:
+                # Si ya existe un usuario con el mismo nombre, mostrar un mensaje de error
+                return "Error: El nombre de usuario ya está en uso. Por favor, elija otro.", 400
             
-            # Agregar usuario a la tabla 'usuario'
-            sql_usuario = "INSERT INTO usuario (nombre_usu, contrasena_usu) VALUES (?, ?)"
-            params_usuario = (nombre_usu, contrasena_usu)
+            # Si el nombre de usuario no existe, proceder a agregar el nuevo usuario
+            sql_usuario = "INSERT INTO usuario (nombre_usu, contrasena_usu, permisoAlumno_usu, permisoProfesor_usu, permisoMateria_usu, permisoNota_usu) VALUES (?, ?, ?, ?, ?, ?)"
+            params_usuario = (nombre_usu, contrasena_usu, permiso_alumno, permiso_profesor, permiso_materia, permiso_nota)
             cursor.execute(sql_usuario, params_usuario)
 
             conn.commit()
@@ -133,7 +181,7 @@ def eliminar_usuario(id_usu):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        sql = "DELETE FROM usuario WHERE id_usu=?"
+        sql = "DELETE FROM usuario WHERE id_usu=? AND id_usu != 1;"
         data = (id_usu,)
         cursor.execute(sql, data)
         conn.commit()
@@ -156,11 +204,25 @@ def editar_usuario(id_usu):
         nombre_usu = request.form['nombre_usu']
         contrasena_usu = request.form['contrasena_usu']
 
+        # Obtener los valores de los permisos desde el formulario y convertirlos a booleanos
+        permiso_alumno = 1 if 'permisoAlumno_usu' in request.form else 0
+        permiso_profesor = 1 if 'permisoProfesor_usu' in request.form else 0
+        permiso_materia = 1 if 'permisoMateria_usu' in request.form else 0
+        permiso_nota = 1 if 'permisoNota_usu' in request.form else 0
+
+        # Verificar si el nombre de usuario ya existe en la base de datos, excluyendo el usuario actual
         conn = get_db_connection()
         cursor = conn.cursor()
-        # Actualizar los atributos del registro en la base de datos
-        sql = "UPDATE usuario SET nombre_usu=?, contrasena_usu=? WHERE id_usu=?"
-        params = (nombre_usu, contrasena_usu, id_usu)
+        cursor.execute("SELECT * FROM usuario WHERE nombre_usu = ? AND id_usu != ?", (nombre_usu, id_usu))
+        existing_user = cursor.fetchone()
+
+        if existing_user:
+            # Si ya existe un usuario con el mismo nombre, mostrar un mensaje de error
+            return "Error: El nombre de usuario ya está en uso. Por favor, elija otro.", 400
+
+        # Si el nombre de usuario no existe, proceder a actualizar el usuario
+        sql = "UPDATE usuario SET nombre_usu=?, contrasena_usu=?, permisoAlumno_usu=?, permisoProfesor_usu=?, permisoMateria_usu=?, permisoNota_usu=? WHERE id_usu=?"
+        params = (nombre_usu, contrasena_usu, permiso_alumno, permiso_profesor, permiso_materia, permiso_nota, id_usu)
         cursor.execute(sql, params)
 
         conn.commit()
@@ -174,57 +236,23 @@ def editar_usuario(id_usu):
             conn.close()
 
 
-
-
 # ---------- ALUMNOS ----------
-'''
-# Ruta para agregar datos falsos (temporal, eliminar después de usar)
-@app.route('/agregar-datos-falsos-alumnos')
-def agregar_datos_falsos():
-    conn = None  # Inicializar la variable conn fuera del bloque try
-    try:
-        conn = get_db_connection()  # Asegúrate de tener la función get_db_connection() definida
-
-        cursor = conn.cursor()
-
-        # Generar e insertar 1000 registros en la tabla alumno
-        for i in range(9):
-            codigo_alu = f'L0040220{i+1}'  # Puedes ajustar la generación de códigos
-            cedula_alu = fake.unique.random_number(digits=10)
-            apellido_alu = fake.last_name()
-            nombre_alu = fake.first_name()
-            direccion_alu = fake.address()
-            telefono_alu_int = fake.random_int(min=1000000000, max=9999999999)
-            telefono_alu = str(telefono_alu_int)[:12]
-            email_alu = fake.email()
-            genero_alu = random.choice(['Heterosexual', 'Homosexual'])
-            fecha_nac_alu = fake.date_of_birth(minimum_age=18, maximum_age=25)
-            observaciones_alu = ''
-
-            sql = ("INSERT INTO alumno (codigo_alu, cedula_alu, apellido_alu, nombre_alu, "
-                   "direccion_alu, telefono_alu, email_alu, genero_alu, fecha_nac_alu, observaciones_alu) "
-                   "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-            values = (codigo_alu, cedula_alu, apellido_alu, nombre_alu, direccion_alu, telefono_alu, email_alu, genero_alu, fecha_nac_alu, observaciones_alu)
-
-            cursor.execute(sql, values)
-
-        # Confirma y cierra la conexión
-        conn.commit()
-        cursor.close()
-
-        return redirect(url_for('alumnos'))
-    except Exception as e:
-        # Manejar el error apropiadamente
-        print("Error al agregar datos falsos:", str(e))
-        return "Error al agregar datos falsos: " + str(e), 500
-    finally:
-        if conn:
-            conn.close()
-'''
-
 @app.route('/alumnos')
 def alumnos():
-    return render_template('alumnos.html')
+    # Verificar si el usuario ha iniciado sesión
+    if 'username' in session:
+        # Obtener el usuario de la base de datos
+        usuario = obtener_usuario_por_nombre(session['username'])
+        print("Usuario:", usuario)
+        # Verificar el permiso del usuario para acceder a la página de alumnos
+        if verificar_permiso_usuario(usuario, 3):
+            return render_template('alumnos.html')
+        else:
+            # Redirigir al usuario al index.html si no tiene permiso
+            return render_template('index.html', message="No tienes permiso para acceder a esta página.")
+    else:
+        # Redirigir al usuario al inicio de sesión si no ha iniciado sesión
+        return redirect(url_for('login'))
 
 # -- ALUMNOS: Agregar
 @app.route('/agregar-alumno', methods=['POST'])
@@ -399,56 +427,22 @@ def editar_alumno(codigo_alu):
 
 
 # ---------- PROFESORES ----------
-'''
-# Ruta para agregar datos falsos de profesores (temporal, eliminar después de usar)
-@app.route('/agregar-datos-falsos-profesores')
-def agregar_datos_falsos_profesores():
-    conn = None  # Inicializar la variable conn fuera del bloque try
-    try:
-        conn = get_db_connection()  # Asegúrate de tener la función get_db_connection() definida
-
-        cursor = conn.cursor()
-
-        # Genera e inserta 1000 registros en la tabla profesor
-        for i in range(1000):
-            codigo_pro = f'P006{i+1}'  # Puedes ajustar la generación de códigos
-            cedula_pro = fake.unique.random_number(digits=10)
-            apellido_pro = fake.last_name()
-            nombre_pro = fake.first_name()
-            titulo_pro = fake.job()[:50]
-            direccion_pro = fake.address()
-            telefono_pro_int = fake.random_int(min=1000000000, max=9999999999)
-            telefono_pro = str(telefono_pro_int)[:12]
-            email_pro = fake.email()
-            genero_pro = 'Heterosexual'
-            fecha_nac_pro = fake.date_of_birth(minimum_age=25, maximum_age=60)
-            observaciones_pro = ''
-
-            sql = ("INSERT INTO profesor (codigo_pro, cedula_pro, apellido_pro, nombre_pro, "
-                   "titulo_pro, direccion_pro, telefono_pro, email_pro, genero_pro, fecha_nac_pro, observaciones_pro) "
-                   "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-            values = (codigo_pro, cedula_pro, apellido_pro, nombre_pro, titulo_pro, 
-                      direccion_pro, telefono_pro, email_pro, genero_pro, fecha_nac_pro, observaciones_pro)
-
-            cursor.execute(sql, values)
-
-        # Confirma y cierra la conexión
-        conn.commit()
-        cursor.close()
-
-        return redirect(url_for('profesores'))
-    except Exception as e:
-        # Manejar el error apropiadamente
-        print("Error al agregar datos falsos de profesores:", str(e))
-        return "Error al agregar datos falsos de profesores: " + str(e), 500
-    finally:
-        if conn:
-            conn.close()
-'''
-
 @app.route('/profesores')
 def profesores():
-    return render_template('profesores.html')
+    # Verificar si el usuario ha iniciado sesión
+    if 'username' in session:
+        # Obtener el usuario de la base de datos
+        usuario = obtener_usuario_por_nombre(session['username'])
+        
+        # Verificar el permiso del usuario para acceder a la página de profesores
+        if verificar_permiso_usuario(usuario, 4):
+            return render_template('profesores.html')
+        else:
+            # Redirigir al usuario al index.html si no tiene permiso
+            return render_template('index.html', message="No tienes permiso para acceder a esta página.")
+    else:
+        # Redirigir al usuario al inicio de sesión si no ha iniciado sesión
+        return redirect(url_for('login'))
 
 # -- PROFESORES: Agregar
 @app.route('/agregar-profesor', methods=['POST'])
@@ -623,50 +617,22 @@ def editar_profesor(codigo_pro):
 
 
 # ---------- MATERIAS ----------
-'''
-# Ruta para agregar datos falsos de materias (temporal, eliminar después de usar)
-@app.route('/agregar-datos-falsos-materias')
-def agregar_datos_falsos_materias():
-    conn = None  # Inicializar la variable conn fuera del bloque try
-    try:
-        conn = get_db_connection()  # Asegúrate de tener la función get_db_connection() definida
-
-        cursor = conn.cursor()
-
-        # Genera e inserta 100 registros en la tabla materia
-        for i in range(100):
-            codigo_mat = f'M{i+1}'  # Puedes ajustar la generación de códigos
-            nombre_mat = fake.word()
-            descripcion_mat = fake.word()
-            horas_mat = random.randint(5, 13) * 15  # Ejemplo de generación aleatoria de horas
-            creditos_mat = random.randint(1, 3)
-            prerequisito_mat = fake.word()
-            observaciones_mat = ''
-
-            sql = ("INSERT INTO materia (codigo_mat, nombre_mat, descripcion_mat, horas_mat, creditos_mat, prerequisito_mat, observaciones_mat) "
-                   "VALUES (?, ?, ?, ?, ?, ?, ?)")
-            values = (codigo_mat, nombre_mat, descripcion_mat, horas_mat, creditos_mat, prerequisito_mat, observaciones_mat)
-
-            cursor.execute(sql, values)
-
-        # Confirma y cierra la conexión
-        conn.commit()
-        cursor.close()
-
-        return redirect(url_for('materias'))
-    except Exception as e:
-        # Manejar el error apropiadamente
-        print("Error al agregar datos falsos de materias:", str(e))
-        return "Error al agregar datos falsos de materias: " + str(e), 500
-    finally:
-        if conn:
-            conn.close()
-'''
-
-
 @app.route('/materias')
 def materias():
-    return render_template('materias.html')
+    # Verificar si el usuario ha iniciado sesión
+    if 'username' in session:
+        # Obtener el usuario de la base de datos
+        usuario = obtener_usuario_por_nombre(session['username'])
+        
+        # Verificar el permiso del usuario para acceder a la página de materias
+        if verificar_permiso_usuario(usuario, 5):  # El número 5 corresponde a la columna 'permisoMateria_usu'
+            return render_template('materias.html')
+        else:
+            # Redirigir al usuario al index.html si no tiene permiso
+            return render_template('index.html', message="No tienes permiso para acceder a esta página.")
+    else:
+        # Redirigir al usuario al inicio de sesión si no ha iniciado sesión
+        return redirect(url_for('login'))
 
 # -- MATERIAS: Agregar
 @app.route('/agregar-materia', methods=['POST'])
@@ -834,11 +800,20 @@ def editar_materia(codigo_mat):
 # ---------- NOTAS ----------
 @app.route('/notas')
 def notas():
-    data = {
-        'titulo': 'Notas',
-        'materia': 'Sistemas de bases de datos - NRC 14293'
-    }
-    return render_template('notas.html', data=data)
+    # Verificar si el usuario ha iniciado sesión
+    if 'username' in session:
+        # Obtener el usuario de la base de datos
+        usuario = obtener_usuario_por_nombre(session['username'])
+        
+        # Verificar el permiso del usuario para acceder a la página de notas
+        if verificar_permiso_usuario(usuario, 6):  # El número 6 corresponde a la columna 'permisoNota_usu'
+            return render_template('notas.html')
+        else:
+            # Redirigir al usuario al index.html si no tiene permiso
+            return render_template('index.html', message="No tienes permiso para acceder a esta página.")
+    else:
+        # Redirigir al usuario al inicio de sesión si no ha iniciado sesión
+        return redirect(url_for('login'))
 
 # -- NOTAS: Agregar
 @app.route('/agregar-nota', methods=['POST'])

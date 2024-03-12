@@ -28,16 +28,40 @@
         <div class="card">
             <div class="card-body">
                 <!-- Formulario para agregar usuarios -->
-                <form action="/agregar-usuario" method="POST">
+                <form id="formulario" action="/agregar-usuario" method="POST" onsubmit="return validarFormulario()">
                     <div class="row mb-3">
                         <div class="col">
                             <label>Nombre de usuario: </label>
-                            <input type="text" class="form-control mb-3" name="nombre_usu">
+                            <input type="text" class="form-control mb-3" name="nombre_usu" required>
                         </div>
                         <div class="col">
                             <label>Contraseña: </label>
-                            <input type="password" class="form-control mb-3" name="contrasena_usu">
-                        </div>                        
+                            <input type="password" class="form-control mb-3" name="contrasena_usu" required>
+                        </div>
+                        <div class="col">
+                            <label>Permisos:</label>
+                            {% if permisos %}
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="permisoAlumno_usu" name="permisoAlumno_usu" {% if permisos.permisoAlumno_usu %}checked{% endif %} value="permisoAlumno_usu">
+                                <label class="form-check-label" for="permisoAlumno_usu">Permiso en Alumno</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="permisoProfesor_usu" name="permisoProfesor_usu" {% if permisos.permisoProfesor_usu %}checked{% endif %} value="permisoProfesor_usu">
+                                <label class="form-check-label" for="permisoProfesor_usu">Permiso en Profesor</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="permisoMateria_usu" name="permisoMateria_usu" {% if permisos.permisoMateria_usu %}checked{% endif %} value="permisoMateria_usu">
+                                <label class="form-check-label" for="permisoMateria_usu">Permiso en Materia</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="permisoNota_usu" name="permisoNota_usu" {% if permisos.permisoNota_usu %}checked{% endif %} value="permisoNota_usu">
+                                <label class="form-check-label" for="permisoNota_usu">Permiso en Nota</label>
+                            </div>
+                            {% else %}
+                                
+                            {% endif %}
+                        </div>
+
                         <div class="col">
                             <button class="btn btn-primary mb-3 mt-3" type="submit">Agregar</button>
                         </div>
@@ -72,29 +96,29 @@
                                         <form action="{{ url_for('editar_usuario', id_usu=d.id_usu) }}" method="post" class="form-editar" style="display: none;">
                                             <div class="col">
                                                 <label>Nombre de usuario: </label>
-                                                <input type="text" class="form-control mb-3" name="nombre_usu">
+                                                <input type="text" class="form-control mb-3" name="nombre_usu" value="{{d.nombre_usu}}" required>
                                             </div>
                                             <div class="col">
                                                 <label>Contraseña: </label>
-                                                <input type="password" class="form-control mb-3" name="contrasena_usu">
+                                                <input type="password" class="form-control mb-3" name="contrasena_usu" value="{{d.contrasena_usu}}" required>
                                             </div>
                                             <div class="col">
                                                 <label>Permisos:</label>
                                                 <div class="form-check">
-                                                    <input type="checkbox" class="form-check-input" id="permiso_alumno" name="permiso_alumno">
-                                                    <label class="form-check-label" for="permiso_alumno">Permiso en Alumno</label>
+                                                    <input type="checkbox" class="form-check-input" id="permisoAlumno_usu_{{ d.id_usu }}" name="permisoAlumno_usu" {% if d.permisoAlumno_usu %}checked{% endif %} value="permisoAlumno_usu_{{ d.id_usu }}">
+                                                    <label class="form-check-label" for="permisoAlumno_usu">Permiso en Alumno</label>
                                                 </div>
                                                 <div class="form-check">
-                                                    <input type="checkbox" class="form-check-input" id="permiso_profesor" name="permiso_profesor">
-                                                    <label class="form-check-label" for="permiso_profesor">Permiso en Profesor</label>
+                                                    <input type="checkbox" class="form-check-input" id="permisoProfesor_usu_{{ d.id_usu }}" name="permisoProfesor_usu" {% if d.permisoProfesor_usu %}checked{% endif %} value="permisoProfesor_usu_{{ d.id_usu }}">
+                                                    <label class="form-check-label" for="permisoProfesor_usu_{{ d.id_usu }}">Permiso en Profesor</label>
                                                 </div>
                                                 <div class="form-check">
-                                                    <input type="checkbox" class="form-check-input" id="permiso_materia" name="permiso_materia">
-                                                    <label class="form-check-label" for="permiso_materia">Permiso en Materia</label>
+                                                    <input type="checkbox" class="form-check-input" id="permisoMateria_usu_{{ d.id_usu }}" name="permisoMateria_usu" {% if d.permisoMateria_usu %}checked{% endif %} value="permisoMateria_usu_{{ d.id_usu }}">
+                                                    <label class="form-check-label" for="permisoMateria_usu_{{ d.id_usu }}">Permiso en Materia</label>
                                                 </div>
                                                 <div class="form-check">
-                                                    <input type="checkbox" class="form-check-input" id="permiso_nota" name="permiso_nota">
-                                                    <label class="form-check-label" for="permiso_nota">Permiso en Nota</label>
+                                                    <input type="checkbox" class="form-check-input" id="permisoNota_usu_{{ d.id_usu }}" name="permisoNota_usu" {% if d.permisoNota_usu %}checked{% endif %} value="permisoNota_usu_{{ d.id_usu }}">
+                                                    <label class="form-check-label" for="permisoNota_usu_{{ d.id_usu }}">Permiso en Nota</label>
                                                 </div>
                                             </div>
                                             
@@ -104,57 +128,6 @@
                                     </td>
                                     <td><a href="{{url_for('eliminar_usuario', id_usu=d.id_usu)}}" class="btn btn-danger btn-sm">Eliminar</a></td>
                                 </tr>
-
-                                <!-- MODAL
-                                <div class="modal fade" id="modal{{d.codigo_not}}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h1 class="modal-title fs-5" id="exampleModalLabel">{{d.codigo_not}}</h1>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <form action="{{ url_for('editar_nota', codigo_not=d.codigo_not) }}" method="post">
-                                                    <div class="mb-3">
-                                                        <label for="nota1_not" class="form-label">Nota 1:</label>
-                                                        <input type="number" step="0.01" class="form-control" id="nota1_not" name="nota1_not" value="{{d.nota1_not}}">
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label for="nota2_not" class="form-label">Nota 2:</label>
-                                                        <input type="number" step="0.01" class="form-control" id="nota2_not" name="nota2_not" value="{{d.nota2_not}}">
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label for="nota3_not" class="form-label">Nota 3:</label>
-                                                        <input type="number" step="0.01" class="form-control" id="nota3_not" name="nota3_not" value="{{d.nota3_not}}">
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label for="fecha_not" class="form-label">Fecha:</label>
-                                                        <input type="date" class="form-control" id="fecha_not" name="fecha_not" value="{{d.fecha_not}}">
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label for="observaciones_not" class="form-label">Observaciones:</label>
-                                                        <input type="text" class="form-control" id="observaciones_not" name="observaciones_not" value="{{d.observaciones_not}}">
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label for="codigo_alu" class="form-label">Código Alumno:</label>
-                                                        <input type="text" class="form-control" id="codigo_alu" name="codigo_alu" value="{{d.codigo_alu}}">
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label for="codigo_pro" class="form-label">Código Profesor:</label>
-                                                        <input type="text" class="form-control" id="codigo_pro" name="codigo_pro" value="{{d.codigo_pro}}">
-                                                    </div>
-                                                    <div class="mb-3">
-                                                        <label for="codigo_mat" class="form-label">Código Materia:</label>
-                                                        <input type="text" class="form-control" id="codigo_mat" name="codigo_mat" value="{{d.codigo_mat}}">
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="submit" class="btn btn-primary">Guardar cambios</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div> -->
                             {% endfor %}
                         {% else %}
                         <tr>
@@ -185,5 +158,17 @@
             form.style.display = 'block';
         });
     });
+
+    function validarFormulario() {
+        var nombreUsuario = document.getElementById("nombre_usu").value.trim();
+        var contrasenaUsuario = document.getElementById("contrasena_usu").value.trim();
+
+        if (nombreUsuario === "" || contrasenaUsuario === "") {
+            alert("Por favor, complete ambos campos nombre de usuario y contraseña.");
+            return false;
+        }
+
+        return true;
+    }
 </script>
 {% endblock %}
