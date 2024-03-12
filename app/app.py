@@ -7,6 +7,7 @@ import random #
 import time #
 import pyodbc
 fake = Faker()
+import os
 
 app=Flask(__name__)
 
@@ -20,21 +21,160 @@ conn_str = f'DRIVER={driver};SERVER={server};DATABASE={database};Trusted_Connect
 def get_db_connection():
     return pyodbc.connect(conn_str)
 
-app.secret_key = '12345'
+app.secret_key = os.urandom(24)
 # ---------- LOGIN ----------
 @app.route('/', methods=['GET', 'POST'])
 def login():
+    error_msg = None
+
     if request.method == 'POST':
-        username = request.form['username']
-        session['username'] = username
-        return redirect(url_for('index'))
-    
-    return render_template('login.html')
+        nombre_usu = request.form['nombre_usu']
+        contrasena_usu = request.form['contrasena_usu']
+
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM usuario WHERE nombre_usu = ?", (nombre_usu,))
+            user = cursor.fetchone()
+
+            if user:
+                # Convertir la fila en un diccionario para facilitar el acceso por nombre de columna
+                user_dict = dict(zip([column[0] for column in cursor.description], user))
+                if user_dict['contrasena_usu'] == contrasena_usu:
+                    session['username'] = nombre_usu
+                    return redirect(url_for('index'))
+                else:
+                    error_msg = "Contraseña incorrecta. Por favor, inténtalo de nuevo."
+            else:
+                error_msg = "Usuario no encontrado. Por favor, verifica tu nombre de usuario y contraseña."
+        except Exception as e:
+            error_msg = "Error al iniciar sesión: " + str(e)
+        finally:
+            if conn:
+                conn.close()
+
+    return render_template('login.html', error=error_msg)
 
 # ---------- INICIO ----------
 @app.route('/index')
 def index():
     return render_template('index.html')
+
+# ---------- PERMISOS ----------
+@app.route('/permisos')
+def permisos():
+    # Verificar si el usuario ha iniciado sesión
+    if 'username' in session:
+        # Verificar si el usuario es "admin"
+        if session['username'] == "admin":
+            return render_template('permisos.html')
+        else:
+            # Redirigir a otra página o mostrar un mensaje de error
+            return render_template('index.html', message="No tienes permiso para acceder a esta página.")
+    else:
+        # Redirigir al usuario al inicio de sesión si no ha iniciado sesión
+        return redirect(url_for('login'))
+
+# -- PERMISOS: Agregar
+@app.route('/agregar-usuario', methods=['POST'])
+def agregar_usuario():
+    conn = None  
+    try:
+        nombre_usu = request.form['nombre_usu']
+        contrasena_usu = request.form['contrasena_usu']
+
+        if nombre_usu and contrasena_usu:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            # Agregar usuario a la tabla 'usuario'
+            sql_usuario = "INSERT INTO usuario (nombre_usu, contrasena_usu) VALUES (?, ?)"
+            params_usuario = (nombre_usu, contrasena_usu)
+            cursor.execute(sql_usuario, params_usuario)
+
+            conn.commit()
+            cursor.close()
+    except Exception as e:
+        # Manejar el error apropiadamente
+        print("Error al agregar usuario:", str(e))
+    finally:
+        if conn:  # Verificar si la variable está definida antes de intentar cerrarla
+            conn.close()
+    return redirect(url_for('permisos'))
+
+# -- PERMISOS: Mostrar usuarios
+@app.route('/mostrar-todos-usuarios', methods=['POST'])
+def mostrar_todos_usuarios():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM usuario")
+        usuarios = cursor.fetchall()
+        insertObject = []
+        columnNames = [column[0] for column in cursor.description]
+        for record in usuarios:
+            insertObject.append(dict(zip(columnNames, record)))
+        cursor.close()
+
+        return render_template('permisos.html', lista=insertObject)
+    except Exception as e:
+        # Manejar el error apropiadamente
+        print("Error al mostrar todos los usuarios:", str(e))
+        return "Error al mostrar los usuarios: " + str(e), 500
+    finally:
+        if conn:
+            conn.close()
+
+# -- PERMISOS: Eliminar
+@app.route('/eliminar-usuario/<int:id_usu>')
+def eliminar_usuario(id_usu):
+    conn = None  
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        sql = "DELETE FROM usuario WHERE id_usu=?"
+        data = (id_usu,)
+        cursor.execute(sql, data)
+        conn.commit()
+        cursor.close()
+        return redirect(url_for('permisos'))
+    except Exception as e:
+        # Manejar el error apropiadamente
+        print("Error al eliminar el usuario:", str(e))
+        return "Error al eliminar el usuario: " + str(e), 500
+    finally:
+        if conn:
+            conn.close()
+
+# -- PERMISOS: Editar
+@app.route('/editar-usuario/<int:id_usu>', methods=['POST'])
+def editar_usuario(id_usu):
+    conn = None
+    try:
+        # Recuperar los datos enviados desde el formulario de edición
+        nombre_usu = request.form['nombre_usu']
+        contrasena_usu = request.form['contrasena_usu']
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        # Actualizar los atributos del registro en la base de datos
+        sql = "UPDATE usuario SET nombre_usu=?, contrasena_usu=? WHERE id_usu=?"
+        params = (nombre_usu, contrasena_usu, id_usu)
+        cursor.execute(sql, params)
+
+        conn.commit()
+        cursor.close()
+        return redirect(url_for('permisos'))
+    except Exception as e:
+        print("Error al editar el usuario:", str(e))
+        return "Error al editar el usuario: " + str(e), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+
 
 # ---------- ALUMNOS ----------
 '''
